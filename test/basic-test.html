@@ -1,0 +1,226 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../web-component-tester/browser.js"></script>
+  <script src="../../iron-test-helpers/test-helpers.js"></script>
+  <script src="../../iron-test-helpers/mock-interactions.js"></script>
+  <!-- Step 1: import the element to test -->
+  <link rel="import" href="../app-pouchdb-quick-search.html">
+  <script src="test-docs.js"></script>
+</head>
+
+<body>
+  <test-fixture id="basic">
+    <template>
+      <app-pouchdb-quick-search adapter="idb" db-name="test"></app-pouchdb-quick-search>
+    </template>
+  </test-fixture>
+  <script>
+  /* global suite, test, fixture, assert, setup */
+  suite('basic', function() {
+    var basic;
+    setup(function() {
+      basic = fixture('basic');
+    });
+    teardown(function(done) {
+      basic.db.destroy().then(() => {
+        done();
+      }).catch(done);
+    });
+    test('basic search', function(done) {
+      var clb = (e) => {
+        assert.isObject(e.detail.result, 'e.detail.result is an object');
+        var res = e.detail.result;
+        assert.isArray(res.rows, 'e.detail.result.rows is an array');
+        assert.equal(res.rows.length, 1, 'rows.length equals 1');
+        assert.equal(res.rows[0].id, 3, 'rows[0].id equals 3');
+        assert.isAbove(res.rows[0].score, 0, 'res.rows[0].score is greater than 0');
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text', 'desc'];
+        basic.query = 'sketch';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('basic search - zero results', function(done) {
+      var clb = (e) => {
+        assert.isObject(e.detail.result, 'e.detail.result is an object');
+        var res = e.detail.result;
+        assert.isArray(res.rows, 'e.detail.result.rows is an array');
+        assert.equal(res.rows.length, 0, 'rows.length equals 0');
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text', 'desc'];
+        basic.query = 'fizzbuzz';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('search with minimumMatch=50%', function(done) {
+      var clb = (e) => {
+        assert.isObject(e.detail.result, 'e.detail.result is an object');
+        var res = e.detail.result;
+        var ids = res.rows.map(function(x) { return x.id; });
+        assert.deepEqual(ids, ['1', '2'], '[\'1\', \'2\'] equals ' + JSON.stringify(ids));
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text', 'desc'];
+        basic.query = 'clouded title';
+        basic.minimumMatch = '50%';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('can build an index', function(done) {
+      var clb = (e) => {
+        assert.isObject(e.detail.result, 'e.detail.result is an object');
+        assert.deepEqual(e.detail.result, {ok: true}, 'e.detail.result equals {ok: true}');
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text'];
+        basic.buildIndex = true;
+        basic.addEventListener('index-updated', clb);
+        basic.addEventListener('error', clb);
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('can highlight with <mark></mark>', function(done) {
+      var clb = (e) => {
+        assert.isObject(e.detail.result, 'e.detail.result is an object');
+        var res = e.detail.result;
+        assert.isArray(res.rows, 'e.detail.result.rows is an array');
+        var index = res.rows[0].highlighting.text.indexOf('<mark>sketch</mark>');
+        assert.notEqual(index, -1, '<mark>sketch</mark> index not equals -1');
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text'];
+        basic.highlighting = true;
+        basic.highlightingPre = '<mark>';
+        basic.highlightingPost = '</mark>';
+        basic.query = 'sketch';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('can filter results', function(done) {
+      var clb = (e) => {
+        var res = e.detail.result;
+        assert.equal(res.rows.length, 2, 'rows.length equals 2');
+        var ids = res.rows.map((x) => x.id);
+        assert.deepEqual(ids, ['3', '1'], 'ids equals ["3", "1"]');
+        done();
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text', 'desc'];
+        basic.query = 'court';
+        basic.filter = (doc) => doc._id !== '2';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+
+    test('should fire `index-deleted` event', function(done) {
+      var destroyClb = (e) => {
+        done();
+      };
+      var clb = (e) => {
+        basic.destroy = true;
+      };
+      var errClb = (e) => {
+        done(e);
+      };
+      basic.db.bulkDocs({
+        docs: testDocs
+      }).then(function() {
+        basic.fields = ['title', 'text', 'desc'];
+        basic.query = 'court';
+        basic.addEventListener('data', clb);
+        basic.addEventListener('error', clb);
+        basic.addEventListener('index-deleted', destroyClb);
+        basic.refresh();
+      }).catch(function(err) {
+        console.error(err);
+        done(err);
+      });
+    });
+  });
+  </script>
+</body>
+
+</html>
