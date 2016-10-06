@@ -255,7 +255,7 @@ will be performed automatically and `index-deleted` event will be fired when fin
        * names in the array is a single key. The app can create many keys and remove it when
        * nescesary. Keys are independed on database keys.
        */
-      fileds: Array,
+      fields: Array,
       /**
        * If set the query result will include full documents. If not set it will only
        * return an `_id` and the probability score.
@@ -466,11 +466,11 @@ will be performed automatically and `index-deleted` event will be fired when fin
         this.db.search({
           fields: this.fields,
           destroy: true
-        }).then((res) => {
+        }).then(() => {
           this.fire('index-deleted');
         }).catch((err) => {
           this.fire('error', {
-            error: error
+            error: err
           });
         });
       }, 1);
@@ -497,7 +497,7 @@ will be performed automatically and `index-deleted` event will be fired when fin
           });
         }).catch((err) => {
           this.fire('error', {
-            error: error
+            error: err
           });
         });
       }, 1);

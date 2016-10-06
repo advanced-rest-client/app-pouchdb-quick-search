@@ -29,7 +29,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </template>
   </test-fixture>
   <script>
-  /* global suite, test, fixture, assert, setup */
+  /* global suite, test, fixture, assert, setup, teardown, testDocs */
   suite('basic', function() {
     var basic;
     setup(function() {
@@ -59,7 +59,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.fields = ['title', 'text', 'desc'];
         basic.query = 'sketch';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.refresh();
       }).catch(function(err) {
         console.error(err);
@@ -84,7 +84,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.fields = ['title', 'text', 'desc'];
         basic.query = 'fizzbuzz';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.refresh();
       }).catch(function(err) {
         console.error(err);
@@ -110,7 +110,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.query = 'clouded title';
         basic.minimumMatch = '50%';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.refresh();
       }).catch(function(err) {
         console.error(err);
@@ -133,7 +133,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.fields = ['title', 'text'];
         basic.buildIndex = true;
         basic.addEventListener('index-updated', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
       }).catch(function(err) {
         console.error(err);
         done(err);
@@ -161,7 +161,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.highlightingPost = '</mark>';
         basic.query = 'sketch';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.refresh();
       }).catch(function(err) {
         console.error(err);
@@ -187,7 +187,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.query = 'court';
         basic.filter = (doc) => doc._id !== '2';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.refresh();
       }).catch(function(err) {
         console.error(err);
@@ -196,10 +196,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     });
 
     test('should fire `index-deleted` event', function(done) {
-      var destroyClb = (e) => {
+      var destroyClb = () => {
         done();
       };
-      var clb = (e) => {
+      var clb = () => {
         basic.destroy = true;
       };
       var errClb = (e) => {
@@ -211,7 +211,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         basic.fields = ['title', 'text', 'desc'];
         basic.query = 'court';
         basic.addEventListener('data', clb);
-        basic.addEventListener('error', clb);
+        basic.addEventListener('error', errClb);
         basic.addEventListener('index-deleted', destroyClb);
         basic.refresh();
       }).catch(function(err) {
