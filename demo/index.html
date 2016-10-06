@@ -18,9 +18,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
   <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
   <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <link rel="import" href="../../iron-pages/iron-pages.html">
   <link rel="import" href="../../paper-input/paper-input.html">
   <link rel="import" href="../../paper-button/paper-button.html">
   <link rel="import" href="../../paper-checkbox/paper-checkbox.html">
+  <link rel="import" href="../../paper-fab-menu/paper-fab-menu.html">
+  <link rel="import" href="../../paper-fab-menu/paper-fab-menu-item.html">
+  <link rel="import" href="../../paper-toast/paper-toast.html">
+  <link rel="import" href="../../app-pouchdb/app-pouchdb-document.html">
   <link rel="import" href="../app-pouchdb-quick-search.html">
   <link rel="import" href="search-result.html">
 
@@ -46,29 +51,55 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     margin: 8px;
     font-weight: 500;
   }
+
+  paper-fab-menu {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+  }
   </style>
 </head>
 
 <body unresolved>
   <template is="dom-bind" id="app">
     <div class="vertical-section-container centered">
-      <h3>Full text query the database</h3>
-      <div class="search">
-        <paper-input disabled$="[[initializing]]" label="query" value="{{query}}"></paper-input>
-        <paper-button disabled$="[[initializing]]" raised on-tap="search">search</paper-button>
-      </div>
-      <section class="search-fields">
-        <label>Search in</label>
-        <template is="dom-repeat" items="[[searchFields]]" id="options">
-          <paper-checkbox checked="{{item.checked}}">[[item.name]]</paper-checkbox>
-        </template>
-      </section>
-      <section class="results" hidden$="[[!searched]]">
-        <label>Found [[results.length]] results</label>
-        <template is="dom-repeat" items="[[results]]" index-as="index">
-          <search-result highlighting="[[item.highlighting]]"></search-result>
-        </template>
-      </section>
+
+      <iron-pages selected="{{page}}">
+        <section>
+          <h3>Full text query the database</h3>
+          <p>Try <mark>Petition</mark> for example search</p>
+          <div class="search">
+            <paper-input disabled$="[[initializing]]" label="query" value="{{query}}"></paper-input>
+            <paper-button disabled$="[[initializing]]" raised on-tap="search">search</paper-button>
+          </div>
+          <section class="search-fields">
+            <label>Search in</label>
+            <template is="dom-repeat" items="[[searchFields]]" id="options">
+              <paper-checkbox checked="{{item.checked}}">[[item.name]]</paper-checkbox>
+            </template>
+          </section>
+          <section class="results" hidden$="[[!searched]]">
+            <label>Found [[results.length]] results</label>
+            <template is="dom-repeat" items="[[results]]" index-as="index">
+              <search-result highlighting="[[item.highlighting]]"></search-result>
+            </template>
+          </section>
+
+          <paper-fab-menu color="teal" icon="add" position="vertical">
+            <paper-fab-menu-item color="#ff4081" tooltip="New document" icon="add" on-tap="_newDoc"></paper-fab-menu-item>
+          </paper-fab-menu>
+        </section>
+        <section>
+          <h3>New document</h3>
+          <paper-input label="Title" value="{{newDoc.title}}"></paper-input>
+          <paper-input label="Chapter number" value="{{newDoc.chapter}}" type="number"></paper-input>
+          <paper-input label="Description" value="{{newDoc.desc}}"></paper-input>
+          <paper-input label="Content (text)" value="{{newDoc.text}}"></paper-input>
+          <paper-button on-tap="cancelDoc">Cancel</paper-button><paper-button raised on-tap="saveDoc">Save new document</paper-button>
+        </section>
+      </iron-pages>
+      <app-pouchdb-document id="nDoc" adapter="idb" db-name="demo" data="{{newDoc}}"></app-pouchdb-document>
+      <paper-toast text="All fields are required." id="requiredError"></paper-toast>
       <app-pouchdb-quick-search id="q" adapter="idb" db-name="demo" fields="[[fields]]" query="{{query}}" on-data="_results" highlighting highlighting-pre="<mark>" highlighting-post="</mark>"></app-pouchdb-quick-search>
     </div>
   </template>
@@ -79,6 +110,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     app.searched = false;
     app.results = [];
     app.query = '';
+    app.page = 0;
+    app.newDoc = {};
     app.searchFields = [{
       name: 'title', checked: true
     }, {
@@ -93,16 +126,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     window.addEventListener('WebComponentsReady', function(e) {
       // app.searchFields.forEach((item) => app.$.selector.select(item));
       var q = document.querySelector('app-pouchdb-quick-search');
-      q.db.destroy()
-      .then(() => {
-        q.dbName = null;
-        q.dbName = 'demo';
+      q.db.info().then((result) => {
+        if (result.doc_count) {
+          return Promise.resolve();
+        }
         return q.db.bulkDocs({docs: testDocs});
       })
-      .then(function(inserts) {
-        console.log(inserts);
-        app.initializing = false;
-      });
+      .then(() => app.initializing = false);
     });
 
     app.search = () => {
@@ -115,6 +145,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       var data = e.detail.result;
       app.results = data.rows;
       app.searched = true;
+    };
+
+    app._newDoc = () => {
+      app.newDoc = {};
+      app.page = 1;
+    };
+
+    app.saveDoc = () => {
+      if (!app.newDoc.title || !app.newDoc.chapter || !app.newDoc.desc || !app.newDoc.text) {
+        app.$.requiredError.open();
+        return;
+      }
+      app.$.nDoc.save();
+      app.page = 0;
+    };
+
+    app.cancelDoc = () => {
+      app.page = 0;
     };
 
   })(document.querySelector('#app'));

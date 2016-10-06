@@ -385,6 +385,9 @@ will be performed automatically and `index-deleted` event will be fired when fin
       this.debounce('find', function() {
         let opts = this._buildQueryOptions();
         this.db.search(opts).then((results) => {
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+          results.totalRows = results.total_rows;
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
           this._setData(results || []);
           this.fire('data', {
             result: this.data
