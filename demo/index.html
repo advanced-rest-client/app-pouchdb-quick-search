@@ -106,6 +106,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <script>
   (function(app) {
     'use strict';
+    /* global testDocs */
     app.initializing = true;
     app.searched = false;
     app.results = [];
@@ -123,11 +124,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }];
     app.fields = [];
 
-    window.addEventListener('WebComponentsReady', function(e) {
-      // app.searchFields.forEach((item) => app.$.selector.select(item));
+    window.addEventListener('WebComponentsReady', function() {
       var q = document.querySelector('app-pouchdb-quick-search');
       q.db.info().then((result) => {
+        // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
         if (result.doc_count) {
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
           return Promise.resolve();
         }
         return q.db.bulkDocs({docs: testDocs});

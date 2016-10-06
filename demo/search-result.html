@@ -13,11 +13,10 @@ the License.
 -->
 <link rel="import" href="../../polymer/polymer.html">
 <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-
 <dom-module id="search-result">
   <template strip-whitespace>
     <style>
-    :host {
+     :host {
       display: block;
       margin: 8px 0;
       padding: 8px;
@@ -30,28 +29,26 @@ the License.
     <p is="inner-html" hidden$="[[!highlighting.chapter]]" label="[[highlighting.chapter]]"></p>
   </template>
   <script>
-  Polymer({
-    is: 'search-result',
+Polymer({
+  is: 'search-result',
+  properties: {
+    highlighting: Object
+  }
+});
 
-    properties: {
-      highlighting: Object
-    }
-  });
-  Polymer({
-    is: 'inner-html',
-    extends: 'p',
+Polymer({
+  is: 'inner-html',
+  extends: 'p',
+  properties: {
+    label: String
+  },
+  observers: [
+    '_labelChanged(label)'
+  ],
 
-    properties: {
-      label: String
-    },
-
-    observers: [
-      '_labelChanged(label)'
-    ],
-
-    _labelChanged: function(label) {
-      this.innerHTML = label;
-    }
-  });
+  _labelChanged: function(label) {
+    this.innerHTML = label;
+  }
+});
   </script>
 </dom-module>
