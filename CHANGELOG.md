@@ -1,3 +1,13 @@
+<a name="1.0.5"></a>
+## [1.0.5](https://github.com/advanced-rest-client/app-pouchdb-quick-search/compare/1.0.4...v1.0.5) (2017-07-08)
+
+
+### Update
+
+* Updated Travis configuration to connect to Sauce Labs. ([01e26fa1b42cada86aedde1e9f6447113c85168a](https://github.com/advanced-rest-client/app-pouchdb-quick-search/commit/01e26fa1b42cada86aedde1e9f6447113c85168a))
+
+
+
 <a name="1.0.4"></a>
 ## [1.0.4](https://github.com/advanced-rest-client/app-pouchdb-quick-search/compare/1.0.1...v1.0.4) (2016-10-06)
 

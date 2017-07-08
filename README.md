@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/advanced-rest-client/app-pouchdb-quick-search.svg?branch=stage)](https://travis-ci.org/advanced-rest-client/app-pouchdb-quick-search)  
+
+# app-pouchdb-quick-search
 
 The `<arc-pouchdb-quick-search>` component uses PouchDB's `quick-search` plugin which is very
 efficient and accurate full-text search engine built on top of PouchDB.
