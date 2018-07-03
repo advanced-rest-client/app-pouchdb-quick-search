@@ -1,6 +1,6 @@
 <!--
 @license
-Copyright 2016 The Advanced REST client authors
+Copyright 2018 The Advanced REST client authors
 Licensed under the Apache License, Version 2.0 (the "License"); you may not
 use this file except in compliance with the License. You may obtain a copy of
 the License at
@@ -11,9 +11,7 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 -->
-<link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../app-pouchdb/app-pouchdb-database-behavior.html">
-<link rel="import" href="../app-pouchdb/pouchdb.html">
+<link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="pouchdb-quick-search.html">
 <!--
 The `<arc-pouchdb-quick-search>` component uses PouchDB's `quick-search` plugin which is very
@@ -190,71 +188,56 @@ Similar to creating an index it is possible to destroy the index if it won't be 
 To do so at least the `fields` attribute must be ste along with `destroy` attribute. The action
 will be performed automatically and `index-deleted` event will be fired when finished.
 
-@group Logic Elements
-@element app-pouchdb-quick-search
-@demo demo/index.html
-@hero hero.svg
+## Changes in 2.0
+
+Pouch DB is not included by default and must be added when using this plugin.
+Include PouchDB before including this plugin.
+
+@polymer
+@customElement
+@memberof LogicElements
 -->
 <script>
-(function() {
-  'use strict';
+class AppPouchdbQuickSearch extends Polymer.Element {
+  static get is() { return 'app-pouchdb-quick-search';}
 
-  Polymer({
-    is: 'app-pouchdb-quick-search',
-    behaviors: [
-      Polymer.AppPouchDBDatabaseBehavior
-    ],
-    /**
-     * Fires when the index has been deleted.
-     *
-     * @event index-deleted
-     */
-    /**
-     * Fires when an error occured during any operation.
-     *
-     * @event error
-     * @param {Error} error An error object.
-     */
-    /**
-     * Fires when `data` is ready to read.
-     *
-     * @event data
-     * @param {Array<Object>} result Result of the query, always array
-     */
-    /**
-     * Fires when the index has been updated (or generated).
-     * This event is not triggered during initial index built during a query.
-     *
-     * @event index-updated
-     * @param {Object} result The result from the search engine.
-     */
-    properties: {
+  static get properties() {
+    return {
       /**
        * A search term.
-       * By default the engine will search for all words passed to the `query` and all of them
-       * must appear in the document in order to be included into the results. You can controll
-       * this behavior by setting up `minimumMatch` attribute.
+       * By default the engine searches for all words set to the `query` property
+       * and all of them must appear in the document in order to be
+       * included into the results. You can controll this behavior by
+       * setting up `minimumMatch` attribute.
        */
       query: String,
       /**
-       * A list of fields to be searched. Use dots to separate deeply nested fields.
-       * Example:
-       * ```['title', 'description']```
+       * A list of fields to be search. Use dots to separate deeply nested fields.
        *
-       * Each filed can have additional parameter which may boost the score. In this case
-       * the `fields` parameter must be an object.
+       * Example:
+       *
+       * ```
+       * ['title', 'description']
+       * ```
+       *
+       * Each filed can have additional parameter which may boost the score.
+       * In this case the `fields` parameter must be an object.
+       *
        * Example :
+       *
        * ```
        * fields: {
-       *  'title': 5,
-       *  'description': 1
+       *  title: 5,
+       *  description: 1
        * }
        * ```
+       *
        * The default boost is 1.
        *
-       * The `fields` attribute represents an index created by the plugin. A combination of field
-       * names in the array is a single key. The app can create many keys and remove it when
-       * nescesary. Keys are independed on database keys.
+       * The `fields` attribute represents an index created by the plugin.
+       * A combination of field names in the array is a single key.
+       * The app can create many keys and remove it when nescesary. Keys are
+       * independed on database keys.
        */
       fields: Array,
       /**
@@ -263,12 +246,9 @@ will be performed automatically and `index-deleted` event will be fired when fin
        */
       includeDocs: Boolean,
       /**
-       * If set it will - by default - add a `<strong></strong>` tag around matched text.
-       * You can controll tags by setting `highlightingPre` and `highlightingPost` attributes.
-       *
-       * Note: This will not work with Polymer's data binding. Polymer uses `HTMLElement.innerText`
-       * function so `<strong></strong>` will appear in it as a word. You must use custom element
-       * that innerHTML's the content to the element.
+       * If set it adds a `<strong></strong>` tag around matched text.
+       * You can controll tags by setting `highlightingPre` and `highlightingPost`
+       * attributes.
        */
       highlighting: Boolean,
       /**
@@ -286,7 +266,7 @@ will be performed automatically and `index-deleted` event will be fired when fin
       // Number of skipped records. The same as `offet`.
       skip: Number,
       /**
-       * By default, every term in a query other than stopwords must appear somewhere in
+       * Every term in a query other than stopwords must appear somewhere in
        * the document in order for it to be matched. This can be changed my relaxing `minimumMatch`
        * attribute. The default is `100` which means that all words in the query must appear
        * in the document in order to be matched.
@@ -354,155 +334,240 @@ will be performed automatically and `index-deleted` event will be fired when fin
        *   * `ok`: Returns results immediately, even if they’re out-of-date.
        *   * `update_after`: Returns results immediately, but kicks off a build afterwards
        */
-      stale: String
-    },
+      stale: String,
+      /**
+       * The PouchDB adapter to use. For more information on PouchDB adapters,
+       * please refer to the PouchDB documentation
+       * [here](https://pouchdb.com/api.html#create_database).
+       */
+      adapter: {
+        type: String,
+        value: null
+      },
 
-    observers: [
+      /**
+       * The name of the database. This can be either a local database (such
+       * as "cats"), or a remote one (e.g., "https://example.com:5678/cats").
+       */
+      dbName: {
+        type: String
+      },
+
+      /**
+       * The number of document revisions to keep track of. The default value
+       * (0) indicates no limit.
+       */
+      revsLimit: {
+        type: Number,
+        value: 0
+      },
+      /**
+       * A reference to the PouchDB database instance that has been created.
+       */
+      db: {
+        type: Object,
+        computed: '__computeDb(dbName, adapter, revsLimit)',
+        notify: true,
+      }
+    };
+  }
+
+  static get observers() {
+    return [
       '_destroyChanged(destroy, fields)',
       '_buildIndexChanged(buildIndex, fields)'
-      // 'refresh(db, query, fields)'
-    ],
+    ];
+  }
 
-    _destroyChanged(destroy, fields) {
-      if (destroy && fields && fields.length) {
-        this.destroyIndex();
-      }
-    },
-
-    _buildIndexChanged: function(buildIndex, fields) {
-      if (buildIndex && fields && fields.length) {
-        this.build();
-      }
-    },
-    /**
-     * Refreshes the results.
-     * This function must be called manually and the engine will not query database without colling
-     * this function.
-     */
-    refresh: function() {
-      if (!this.query) {
-        return;
-      }
-      this.debounce('find', function() {
-        let opts = this._buildQueryOptions();
-        this.db.search(opts).then((results) => {
-          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-          results.totalRows = results.total_rows;
-          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-          this._setData(results || []);
-          this.fire('data', {
-            result: this.data
-          });
-        }).catch((error) => {
-          this.fire('error', {
-            error: error
-          });
-        });
-      }, 1);
-    },
-    /**
-     * Builds a query options object to be passed to the `db.search()` function.
-     * This function will not check for missing options or wrong configuration of options.
-     */
-    _buildQueryOptions: function() {
-      var opts = {
-        'fields': this.fields
-      };
-      if (this.query) {
-        opts.query = this.query;
-      }
-      if (this.minimumMatch) {
-        opts.mm = this.minimumMatch;
-      }
-      // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-      if (this.includeDocs) {
-        opts.include_docs = this.includeDocs;
-      }
-      if (this.highlightingPre) {
-        opts.highlighting_pre = this.highlightingPre;
-      }
-      if (this.highlightingPost) {
-        opts.highlighting_post = this.highlightingPost;
-      }
-      // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-      if (this.highlighting) {
-        opts.highlighting = this.highlighting;
-      }
-      if (this.limit) {
-        opts.limit = this.limit;
-      }
-      if (this.skip) {
-        opts.skip = this.skip;
-      }
-      var f = this.filter;
-      if (f && typeof f === 'function') {
-        opts.filter = f;
-      }
-      if (this.buildIndex) {
-        opts.build = this.buildIndex;
-      }
-      if (this.destroy) {
-        opts.destroy = this.destroy;
-      }
-      if (this.stale) {
-        opts.stale = this.stale;
-      }
-      return opts;
-    },
-    /**
-     * Deletes the index as a combination of `fileds` attribute.
-     * Further call to `refresh()` will rebuild the index automatically but it will take some time.
-     *
-     * This function will be called automatically when `destroy` and `fields` attributes are set.
-     * It will fire `index-deleted` event when the index has been updated or `error` in case of
-     * error.
-     */
-    destroyIndex: function() {
-      if (!this.fields || !this.fields.length) {
-        return this.fire('error', {
-          error: new Error('The `fields` asttribute is not set.')
-        });
-      }
-      this.debounce('destroy', () => {
-        this.db.search({
-          fields: this.fields,
-          destroy: true
-        }).then(() => {
-          this.fire('index-deleted');
-        }).catch((err) => {
-          this.fire('error', {
-            error: err
-          });
-        });
-      }, 1);
-    },
-    /**
-     * Manually builds an index.
-     * This function will be called automatically when `buildIndex` and `fields` attributes are set.
-     * It will fire `index-updated` event when the index has been updated or `error` in case of
-     * error.
-     */
-    build: function() {
-      if (!this.fields || !this.fields.length) {
-        return this.fire('error', {
-          error: new Error('The `fields` asttribute is not set.')
-        });
-      }
-      this.debounce('destroy', () => {
-        this.db.search({
-          fields: this.fields,
-          build: true
-        }).then((res) => {
-          this.fire('index-updated', {
-            result: res
-          });
-        }).catch((err) => {
-          this.fire('error', {
-            error: err
-          });
-        });
-      }, 1);
+  __computeDb(name, revsLimit, adapter) {
+    if (this.db) {
+      this.db.removeAllListeners();
     }
-  });
-})();
+    if (!name) {
+      return;
+    }
+    // jscs:disable
+    const options = {
+      auto_compaction: true
+    };
+    if (adapter) {
+      options.adapter = adapter;
+    }
+    if (revsLimit) {
+      options.revs_limit = revsLimit;
+    }
+    // jscs:enable
+    /* global PouchDB */
+    return new PouchDB(name, options);
+  }
+
+  _destroyChanged(destroy, fields) {
+    if (destroy && fields && fields.length) {
+      this.destroyIndex();
+    }
+  }
+
+  _buildIndexChanged(buildIndex, fields) {
+    if (buildIndex && fields && fields.length) {
+      this.build();
+    }
+  }
+  /**
+   * Refreshes the results.
+   * This function must be called manually and the engine will not query database without colling
+   * this function.
+   */
+  refresh() {
+    if (!this.query) {
+      return;
+    }
+    const opts = this._buildQueryOptions();
+    this.db.search(opts)
+    .then((results) => {
+      // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+      results.totalRows = results.total_rows;
+      // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+      const data = results || [];
+      this._setData(data);
+      this.dispatchEvent(new CustomEvent('pouchdb-quick-search-data', {
+        bubbles: false,
+        detail: {
+          result: data
+        }
+      }));
+    })
+    .catch((cause) => this._error(cause));
+  }
+
+  _error(cause) {
+    console.error(cause);
+    this.dispatchEvent(new CustomEvent('error', {
+      bubbles: false,
+      detail: cause
+    }));
+  }
+  /**
+   * Builds a query options object to be passed to the `db.search()` function.
+   * This function will not check for missing options or wrong configuration of options.
+   */
+  _buildQueryOptions() {
+    const opts = {
+      fields: this.fields
+    };
+    if (this.query) {
+      opts.query = this.query;
+    }
+    if (this.minimumMatch) {
+      opts.mm = this.minimumMatch;
+    }
+    // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+    if (this.includeDocs) {
+      opts.include_docs = this.includeDocs;
+    }
+    if (this.highlightingPre) {
+      opts.highlighting_pre = this.highlightingPre;
+    }
+    if (this.highlightingPost) {
+      opts.highlighting_post = this.highlightingPost;
+    }
+    // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+    if (this.highlighting) {
+      opts.highlighting = this.highlighting;
+    }
+    if (this.limit) {
+      opts.limit = this.limit;
+    }
+    if (this.skip) {
+      opts.skip = this.skip;
+    }
+    const f = this.filter;
+    if (f && typeof f === 'function') {
+      opts.filter = f;
+    }
+    if (this.buildIndex) {
+      opts.build = this.buildIndex;
+    }
+    if (this.destroy) {
+      opts.destroy = this.destroy;
+    }
+    if (this.stale) {
+      opts.stale = this.stale;
+    }
+    return opts;
+  }
+  /**
+   * Deletes the index as a combination of `fileds` attribute.
+   * Further call to `refresh()` will rebuild the index automatically but it will take some time.
+   *
+   * This function will be called automatically when `destroy` and `fields` attributes are set.
+   * It will fire `index-deleted` event when the index has been updated or `error` in case of
+   * error.
+   */
+  destroyIndex() {
+    if (!this.fields || !this.fields.length) {
+      this._error(new Error('The `fields` asttribute is not set.'));
+      return;
+    }
+    this.db.search({
+      fields: this.fields,
+      destroy: true
+    }).then(() => {
+      this.dispatchEvent(new CustomEvent('index-deleted', {
+        bubbles: false
+      }));
+    })
+    .catch((cause) => this._error(cause));
+  }
+  /**
+   * Manually builds an index.
+   * This function will be called automatically when `buildIndex` and `fields` attributes are set.
+   * It will fire `index-updated` event when the index has been updated or `error` in case of
+   * error.
+   */
+  build() {
+    if (!this.fields || !this.fields.length) {
+      this._error(new Error('The `fields` asttribute is not set.'));
+      return;
+    }
+    this.db.search({
+      fields: this.fields,
+      build: true
+    })
+    .then((res) => {
+      this.dispatchEvent(new CustomEvent('index-updated', {
+        bubbles: false,
+        detail: {
+          result: res
+        }
+      }));
+    })
+    .catch((cause) => this._error(cause));
+  }
+
+  /**
+   * Fires when the index has been deleted.
+   *
+   * @event index-deleted
+   */
+  /**
+   * Fires when an error occured during any operation.
+   *
+   * @event error
+   * @param {Error} error An error object.
+   */
+  /**
+   * Fires when `data` is ready to read.
+   *
+   * @event pouchdb-quick-search-data
+   * @param {Array<Object>} result Result of the query, always array
+   */
+  /**
+   * Fires when the index has been updated (or generated).
+   * This event is not triggered during initial index built during a query.
+   *
+   * @event index-updated
+   * @param {Object} result The result from the search engine.
+   */
+}
+window.customElements.define(AppPouchdbQuickSearch.is, AppPouchdbQuickSearch);
 </script>
